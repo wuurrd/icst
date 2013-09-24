@@ -39,7 +39,7 @@
 \renewcommand{\abstracttextfont}{\normalfont\small\itshape} % Set the abstract itself to small italic text
 
 \usepackage{titlesec} % Allows customization of titles
-%\renewcommand\thesection{\Roman{section}} % Roman numerals for the sections
+\renewcommand\thesection{\Roman{section}} % Roman numerals for the sections
 \renewcommand\thesubsection{\Roman{subsection}} % Roman numerals for subsections
 \titleformat{\section}[block]{\large\scshape\centering}{\thesection.}{1em}{} % Change the look of the section titles
 \titleformat{\subsection}[block]{\large}{\thesubsection.}{1em}{} % Change the look of the section titles
@@ -128,9 +128,9 @@ number of tests that can be run.
 When discussing the number of resource hours throughout this paper we will draw
 many parallels to parallelization of CPU bound problems. To draw a direct
 parallel, one could say (with only slight loss of generality) that the goal of
-an efficient search algorithm for a test system is to attempt to scale as close
-to linearly when adding resources to the pool (as one would like to when adding
-CPUs).
+an efficient search algorithm for a test job allocation is to attempt to scale
+as close to linearly when adding resources to the pool (as one would like to
+when adding CPUs).
 
 
 %------------------------------------------------
@@ -154,6 +154,10 @@ question.
 
 \section{Search algorithm}
 
+The search algorithm will generate a list of jobs and allocated resources for
+every generation we ask it to perform. Due to this, we can run it multiple
+times, and can find out which generation was the most effective.
+
 Each generation of resources for a test run must continue allocating until at
 least one of the following criteria is met:
 
@@ -162,51 +166,78 @@ least one of the following criteria is met:
 \item All jobs in the test queue have a resource, or an unsatisfiable required resource.
 \end{compactitem}
 
-Shaukat and Shuai! I NEED MORE HELP / INFO HERE ;)
- %------------------------------------------------
+Once a suitable number of generations have been created, one can use a fitness
+function to tell us what combination of resources and jobs will yield the
+lowest number of resource hours.
+
+
+%------------------------------------------------
+
+\subsection{Resource cost and Resource weight}
+
+The cost and weight of a resource are very important factors in deciding how
+scarce a resource is, and therefore whether we can afford losing it for a long
+period. Here the concept of Resource hours makes a lot of sense, as we can in
+some sense think of a resource of a very high cost as a very strong CPU, and so
+can perform multiple (Resource) CPU hours during one hour.
+
+The weight is calculated as a ratio of the number of resources in the pool in
+relation to the others that are in the pool. After this ratio has been
+calculated, we normalize the weights for one job such that:
+
+\begin{equation}
+\sum_{i}{w_{i}} = 1
+\end{equation}
+
+The effect of this normalization is that jobs that require one scarce resource
+and many non scarce resources become more expensive than jobs that require
+multiple scarce resources. This has the added effect that scarce resources will
+be less used in non-scarce requiring jobs.
+
+The resource cost is the cost of context switching that resource to use for the
+current test. The context switch could be very cheap if the resource already
+has the correct build and is on the correct subnet, or could take hours for
+certain types of devices if nothing matches.
+
+%------------------------------------------------
 
 \subsection{Fitness function}
 
 For the search algorithm to be able to know whether one generation of resource
-allocations is better than another we need to have a fitness function.
+allocations is better than another we need to have a fitness function. This
+fitness function will give us a metric we can use to compare how long the list
+of jobs will take to complete.
 
-We propose a fitness function for resource allocation:
+We propose the following fitness function for resource allocation:
 \begin{equation}\label{fitness_func}
 F(J, R) = \sum_{i=0}^{n}{\left( \mu \left(J_{i}\right) \cdot \sum_{j=0}^{k}{R_{j_w} \cdot R_{j_C} } \right)}
 \end{equation}
 
 \noindent $\mu (R_j)$: The average historic runtime of job index j, or max runtime (if it has
 never been run) \\
-\noindent $R_{j_w}$: The weight of resource j (this will be discussed in detail later).\\
-\noindent $R_{j_C}$: The cost of using resource j in the current task (this will be discussed in detail later).
+\noindent $R_{j_w}$: The weight of resource j.\\
+\noindent $R_{j_C}$: The cost of using resource j in the current test.
 
-By using \ref{fitness_func}, we find that
-%------------------------------------------------
-
-\subsection{Resource cost and Resource weight}
-
-% Normalized so sum(weights) = 1
-% mention resource cost as an analogue to context switching in CPU problems.
-
-TODO
 %------------------------------------------------
 
 \section{Methods}
 
-The following search algorithms were verified using test data supplied by CISCO systems:
+The following search algorithms were verified using test data supplied by CISCO:
 
 \begin{compactitem}
 \item (1+1) Evolutionary Algorithm
 \item Genetic Algorithm
 \item Alternating Variable Method
-\item Random Search (as baseline)
+\item Random Search (as a baseline)
 \end{compactitem}
 
+TODO: Explanation of how each of these algorithms work.
 %------------------------------------------------
 
 \section{Results}
 
-Fill in results
+In this pilot study we found that the (1+1) Evolutionary Algorithm was the most
+effective at running tasks.
 
 %------------------------------------------------
 
